@@ -79,7 +79,16 @@ api_key = st.text_input("🔑 Enter your YouTube API Key:", type="password")
 
 channel_ids_input = st.text_area("📺 Enter YouTube Channel IDs (one per line):")
 channel_ids = [c.strip() for c in channel_ids_input.splitlines() if c.strip()]
-
+with st.expander("❓ How to find a YouTube Channel ID"):
+    st.markdown("""
+    1. Go to the target channel’s **YouTube page** in your browser  
+    2. Press `Ctrl + U` to **view the page source**  
+    3. Press `Ctrl + F` to search and enter `channel_id=`  
+    4. Copy the text **after** `channel_id=` — it will look like this:  
+       `UCxxxxxxxxxxxxxxxxxxxxxx`  
+       
+    ✅ Example: `UCNpSm55KmljJvQ3Sr20bmTQ`
+    """)
 col1, col2 = st.columns(2)
 with col1:
     start_month_year = st.text_input("Start Month & Year (MMYYYY)", value="")

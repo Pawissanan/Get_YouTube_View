@@ -89,6 +89,7 @@ with st.expander("❓ How to find a YouTube Channel ID"):
        
     ✅ Example: `UCNpSm55KmljJvQ3Sr20bmTQ`
     """)
+    
 col1, col2 = st.columns(2)
 with col1:
     start_month_year = st.text_input("Start Month & Year (MMYYYY)", value="")

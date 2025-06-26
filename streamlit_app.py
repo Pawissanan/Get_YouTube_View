@@ -29,8 +29,6 @@ def fetch_youtube_data(api_key, channel_id, start_month_year, end_month_year):
             'Description': [],  # Only hashtags
             'Published Date': [],
             'View Count': []
-            
-            
         }
 
         next_page_token = ''
@@ -88,8 +86,8 @@ with col1:
 with col2:
     end_month_year = st.text_input("End Month & Year (MMYYYY)", value="")
 
-keyword = st.text_input("Filter by keyword in title (optional):").lower()
-hashtag_filter = st.text_input("Filter by hashtag (optional):").lower()
+keyword = st.text_input("🔍 Filter by keyword in title and description (optional):").lower()
+hashtag_filter = st.text_input("🔍 Filter by hashtag (optional):").lower()
 
 if st.button("Run Analysis"):
     st.write("Keyword:", keyword)

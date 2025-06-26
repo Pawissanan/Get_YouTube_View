@@ -73,7 +73,7 @@ def fetch_youtube_data(api_key, channel_id, start_month_year, end_month_year):
         return None
 
 # Streamlit UI
-st.title("📊 YouTube Channel View Extractor")
+st.title("YouTube Channel View Extractor")
 
 api_key = st.text_input("🔑 Enter your YouTube API Key:", type="password")
 
@@ -86,10 +86,12 @@ with col1:
 with col2:
     end_month_year = st.text_input("End Month & Year (MMYYYY)", value="")
 
-keyword = st.text_input("🔍 Filter by keyword in title or description (optional):").lower()
-hashtag_filter = st.text_input("🔎 Filter by hashtag (optional):").lower()
+keyword = st.text_input("Filter by keyword in title (optional):").lower()
+hashtag_filter = st.text_input("Filter by hashtag (optional):").lower()
 
 if st.button("Run Analysis"):
+    st.write("Keyword:", keyword)
+    st.write("Hashtag:", hashtag_filter)
     if not api_key or not channel_ids:
         st.warning("Please enter both API key and at least one channel ID.")
     else:

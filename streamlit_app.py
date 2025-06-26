@@ -50,13 +50,15 @@ def fetch_youtube_data(api_key, channel_id, start_month_year, end_month_year):
                 description = snippet.get('description', '')
 
                 if start_year <= published_date.year <= end_year and start_month <= published_date.month <= end_month:
+                    if keyword and keyword not in video_title.lower() and keyword not in description.lower():
+                        continue # Skip videos that don't match keyword
                     hashtags = re.findall(r'#\S+', description)
 
                     video_data['Channel Name'].append(channel_name)
                     video_data['Video Title'].append(video_title)
-                    video_data['View Count'].append(view_count)
-                    video_data['Published Date'].append(published_date.date())
                     video_data['Description'].append(', '.join(hashtags))
+                    video_data['Published Date'].append(published_date.date())
+                    video_data['View Count'].append(view_count)
 
             next_page_token = playlist_items_response.get('nextPageToken')
 
@@ -79,6 +81,8 @@ with col1:
     start_month_year = st.text_input("Start Month & Year (MMYYYY)", value="")
 with col2:
     end_month_year = st.text_input("End Month & Year (MMYYYY)", value="")
+
+keyword = st.text_input("🔍 Filter by keyword in title or description (optional):").lower()
 
 if st.button("Run Analysis"):
     if not api_key or not channel_ids:

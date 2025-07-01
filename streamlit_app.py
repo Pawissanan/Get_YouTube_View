@@ -55,8 +55,9 @@ def fetch_youtube_data(api_key, channel_id, start_month_year, end_month_year):
                         
                     hashtags = re.findall(r'#\S+', description)
                     hashtags_lower = [h.lower() for h in hashtags]
-                    if hashtag_filter and hashtag_filter not in hashtags_lower:
-                        continue
+                    if hashtag_keywords:
+                        if not any(h in hashtags_lower for h in hashtag_keywords):
+                            continue  # Skip if none of the specified hashtags are present
 
                     video_data['Channel Name'].append(channel_name)
                     video_data['Video Title'].append(video_title)
@@ -98,7 +99,9 @@ with col2:
     end_month_year = st.text_input("End Month & Year (MMYYYY)", value="")
 
 keyword = st.text_input("🔍 Filter by keyword in title and description (optional):").lower()
-hashtag_filter = st.text_input("🔍 Filter by hashtag (optional):").lower()
+hashtag_filter = st.text_input("🔎 Filter by hashtag(s), separated by commas (e.g. #AI, #tech) (optional)").lower()
+# Convert to a list of lowercase hashtags
+hashtag_keywords = [tag.strip() for tag in hashtag_filter.split(',') if tag.strip()]
 
 if st.button("Run Analysis"):
     st.write("Keyword:", keyword)

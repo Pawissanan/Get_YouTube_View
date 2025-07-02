@@ -4,7 +4,7 @@ import re
 from datetime import datetime
 import googleapiclient.discovery as youtube
 
-def fetch_youtube_data(api_key, channel_id, start_month_year, end_month_year):
+def fetch_youtube_data(api_key, channel_id, start_month_year, end_month_year, keyword, hashtag_keywords, include_description):
     try:
         youtube_api = youtube.build('youtube', 'v3', developerKey=api_key)
 
@@ -47,23 +47,37 @@ def fetch_youtube_data(api_key, channel_id, start_month_year, end_month_year):
                 view_count = int(statistics.get('viewCount', 0))
                 published_date_str = snippet.get('publishedAt', '')
                 published_date = datetime.fromisoformat(published_date_str[:-1])
-                description = snippet.get('description', '')
 
+                # ✅ Keyword filter (if any)
+                if keyword:
+                    description_preview = snippet.get('description', '')
+                        if keyword not in video_title.lower() and keyword not in description_preview.lower():
+                            continue
+
+                # ✅ Date filter
                 if start_year <= published_date.year <= end_year and start_month <= published_date.month <= end_month:
-                    if keyword and keyword not in video_title.lower() and keyword not in description.lower():
-                        continue 
-                        
-                    hashtags = re.findall(r'#\S+', description)
-                    hashtags_lower = [h.lower() for h in hashtags]
-                    if hashtag_keywords:
-                        if not any(h in hashtags_lower for h in hashtag_keywords):
-                            continue  # Skip if none of the specified hashtags are present
 
-                    video_data['Channel Name'].append(channel_name)
-                    video_data['Video Title'].append(video_title)
-                    video_data['Description'].append(', '.join(hashtags))
-                    video_data['Published Date'].append(published_date.date())
-                    video_data['View Count'].append(view_count)
+                    # ✅ Conditionally fetch and process description and hashtags
+                    if include_description:
+                        description = snippet.get('description', '')
+                        hashtags = re.findall(r'#\S+', description)
+                        hashtags_lower = [h.lower() for h in hashtags]
+
+                   # ✅ Hashtag filter
+                   if hashtag_keywords:
+                      if not any(h in hashtags_lower for h in hashtag_keywords):
+                          continue
+
+                   description_output = ', '.join(hashtags)
+                 else:
+                   description_output = ''
+
+                # ✅ Append video data
+                video_data['Channel Name'].append(channel_name)
+                video_data['Video Title'].append(video_title)
+                video_data['View Count'].append(view_count)
+                video_data['Published Date'].append(published_date.date())
+                video_data['Description'].append(description_output)
 
             next_page_token = playlist_items_response.get('nextPageToken')
 
@@ -97,7 +111,7 @@ with col1:
     start_month_year = st.text_input("Start Month & Year (MMYYYY)", value="")
 with col2:
     end_month_year = st.text_input("End Month & Year (MMYYYY)", value="")
-
+include_description = st.checkbox("Include video description and hashtags (uses more API quota)", value=True)
 keyword = st.text_input("🔍 Filter by keyword in title and description (optional):").lower()
 hashtag_filter = st.text_input("🔎 Filter by hashtag(s), separated by commas (e.g. #AI, #tech) (optional)").lower()
 # Convert to a list of lowercase hashtags

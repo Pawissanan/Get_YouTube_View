@@ -2,11 +2,11 @@ import streamlit as st
 import pandas as pd
 import re
 from datetime import datetime
-import googleapiclient.discovery as youtube
+from googleapiclient.discovery import build
 
-def fetch_youtube_data(api_key, channel_id, start_month_year, end_month_year):
+def fetch_youtube_data(api_key, channel_id, start_month_year, end_month_year, keyword, hashtag_keywords, include_description):
     try:
-        youtube_api = youtube.build('youtube', 'v3', developerKey=api_key)
+        youtube_api = build('youtube', 'v3', developerKey=api_key)
 
         start_month = int(start_month_year[:2])
         start_year = int(start_month_year[2:])
@@ -26,9 +26,10 @@ def fetch_youtube_data(api_key, channel_id, start_month_year, end_month_year):
         video_data = {
             'Channel Name': [],
             'Video Title': [],
-            'Description': [],  # Only hashtags
+            'Description': [],
             'Published Date': [],
             'View Count': []
+            
         }
 
         next_page_token = ''
@@ -47,21 +48,33 @@ def fetch_youtube_data(api_key, channel_id, start_month_year, end_month_year):
                 view_count = int(statistics.get('viewCount', 0))
                 published_date_str = snippet.get('publishedAt', '')
                 published_date = datetime.fromisoformat(published_date_str[:-1])
-                description = snippet.get('description', '')
 
+                # Keyword filter
+                if keyword:
+                    description_preview = snippet.get('description', '')
+                    if keyword not in video_title.lower() and keyword not in description_preview.lower():
+                        continue
+
+                # Date filter
                 if start_year <= published_date.year <= end_year and start_month <= published_date.month <= end_month:
-                    if keyword and keyword not in video_title.lower() and keyword not in description.lower():
-                        continue 
-                        
-                    hashtags = re.findall(r'#\S+', description)
-                    hashtags_lower = [h.lower() for h in hashtags]
-                    if hashtag_keywords:
-                        if not any(h in hashtags_lower for h in hashtag_keywords):
-                            continue  # Skip if none of the specified hashtags are present
+
+                    if include_description:
+                        description = snippet.get('description', '')
+                        hashtags = re.findall(r'#\\S+', description)
+                        hashtags_lower = [h.lower() for h in hashtags]
+
+                        # Hashtag filter
+                        if hashtag_keywords:
+                            if not any(h in hashtags_lower for h in hashtag_keywords):
+                                continue
+
+                        description_output = ', '.join(hashtags)
+                    else:
+                        description_output = ''
 
                     video_data['Channel Name'].append(channel_name)
                     video_data['Video Title'].append(video_title)
-                    video_data['Description'].append(', '.join(hashtags))
+                    video_data['Description'].append(description_output)
                     video_data['Published Date'].append(published_date.date())
                     video_data['View Count'].append(view_count)
 
@@ -74,45 +87,45 @@ def fetch_youtube_data(api_key, channel_id, start_month_year, end_month_year):
         return None
 
 # Streamlit UI
-st.title("YouTube Channel View Extractor")
-st.markdown("""report bug : `pawissanan.denphatcharangkul@initiative.com`""")
+st.title("📊 YouTube Channel Hashtag Extractor")
 
 api_key = st.text_input("🔑 Enter your YouTube API Key:", type="password")
 
 channel_ids_input = st.text_area("📺 Enter YouTube Channel IDs (one per line):")
 channel_ids = [c.strip() for c in channel_ids_input.splitlines() if c.strip()]
+
 with st.expander("❓ How to find a YouTube Channel ID"):
     st.markdown("""
-    1. Go to the target channel’s **YouTube page** in your browser  
-    2. Press `Ctrl + U` to **view the page source**  
-    3. Press `Ctrl + F` to search and enter `channel_id=`  
-    4. Copy the text **after** `channel_id=` — it will look like this:  
+    1. Go to the target channel’s **YouTube page**
+    2. Press `Ctrl + U` to **view page source**
+    3. Press `Ctrl + F` and search for `channel_id=`
+    4. Copy the code after `channel_id=` — it will look like this:  
        `UCxxxxxxxxxxxxxxxxxxxxxx`  
        
     ✅ Example: `UCNpSm55KmljJvQ3Sr20bmTQ`
     """)
-    
+
 col1, col2 = st.columns(2)
 with col1:
-    start_month_year = st.text_input("Start Month & Year (MMYYYY)", value="")
+    start_month_year = st.text_input("Start Month & Year (MMYYYY)")
 with col2:
-    end_month_year = st.text_input("End Month & Year (MMYYYY)", value="")
+    end_month_year = st.text_input("End Month & Year (MMYYYY)")
 
-keyword = st.text_input("🔍 Filter by keyword in title and description (optional):").lower()
-hashtag_filter = st.text_input("🔎 Filter by hashtag(s), separated by commas (e.g. #AI, #tech) (optional)").lower()
-# Convert to a list of lowercase hashtags
+keyword = st.text_input("🔍 Filter by keyword in title or description (optional):").lower()
+hashtag_filter = st.text_input("🔎 Filter by hashtag(s), separated by commas (e.g. #AI, #tech)").lower()
+include_description = st.checkbox("Include video description and hashtags (uses more API quota)", value=True)
+
+# Convert user hashtag input to list
 hashtag_keywords = [tag.strip() for tag in hashtag_filter.split(',') if tag.strip()]
 
 if st.button("Run Analysis"):
-    st.write("Keyword:", keyword)
-    st.write("Hashtag:", hashtag_filter)
-    if not api_key or not channel_ids:
-        st.warning("Please enter both API key and at least one channel ID.")
+    if not api_key or not channel_ids or not start_month_year or not end_month_year:
+        st.warning("Please complete all required fields.")
     else:
         df_list = []
         with st.spinner("Fetching data from YouTube..."):
             for cid in channel_ids:
-                df = fetch_youtube_data(api_key, cid, start_month_year, end_month_year)
+                df = fetch_youtube_data(api_key, cid, start_month_year, end_month_year, keyword, hashtag_keywords, include_description)
                 if df is not None and not df.empty:
                     df_list.append(df)
 
@@ -121,7 +134,6 @@ if st.button("Run Analysis"):
             st.success("✅ Data fetched successfully!")
             st.dataframe(result_df)
 
-            # Excel download
             file_name = f"youtube_data_{start_month_year}_{end_month_year}.xlsx"
             result_df.to_excel(file_name, index=False)
 

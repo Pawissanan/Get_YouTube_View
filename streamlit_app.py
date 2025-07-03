@@ -111,9 +111,10 @@ with col1:
 with col2:
     end_month_year = st.text_input("End Month & Year (MMYYYY)")
 
+include_description = st.checkbox("Include video description and hashtags (uses more API quota)", value=True)
 keyword = st.text_input("🔍 Filter by keyword in title or description (optional):").lower()
 hashtag_filter = st.text_input("🔎 Filter by hashtag(s), separated by commas (e.g. #AI, #tech)").lower()
-include_description = st.checkbox("Include video description and hashtags (uses more API quota)", value=True)
+
 
 # Convert user hashtag input to list
 hashtag_keywords = [tag.strip() for tag in hashtag_filter.split(',') if tag.strip()]

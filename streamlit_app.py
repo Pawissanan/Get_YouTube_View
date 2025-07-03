@@ -187,7 +187,7 @@ if st.button("Run Analysis"):
             st.warning("No data found for the selected period.")
 '''
 
-with open("/mnt/data/app_quota_estimator.py", "w", encoding="utf-8") as f:
+with open("/mnt/data/streamlit_app.py", "w", encoding="utf-8") as f:
     f.write(app_code_with_quota)
 
 "/mnt/data/app_quota_estimator.py with quota estimator and caching is ready."
